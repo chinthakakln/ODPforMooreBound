@@ -1,5 +1,3 @@
-
-
 #This provides a python implementation of the 1st simulated annealing algorithm proposed
 # in the work "On Order Degree Problem for Moore Bound".
 #This program is tested and  it correctly implements the proposed algorithm
@@ -17,11 +15,11 @@ import math
 #1. Run the Algorithm several times to obtain  better results
 #2. Change the DEGREE (section 0) according to the degree of the graph 
 #3. Parameters in section 8 can be changed and tuned for better results.
-#4. Increasing the iterations for higher degrees produces better results.
+#4. Increasing the number of iterations for higher degrees produces better results.
 
 #(0)Initially define the degree of the graph.
 
-DEGREE=8  # degree of the graph (You can change it according to the graph)
+DEGREE=5  # degree of the graph (You can change it according to the graph)
 
 n=DEGREE
 
@@ -59,7 +57,7 @@ def initialize_permutations(n):
     nb = n  # Number of blocks along one dimension
     
     # Initialize an empty block matrix
-    block_mat = []
+    Blokmat = []
     for i in range(nb):
         row = []
         for j in range(nb):
@@ -70,10 +68,10 @@ def initialize_permutations(n):
                 # Set other blocks to be identity matrix
                 row.append(np.eye(bz))
         # Add the blocks
-        block_mat.append(np.hstack(row))
+        Blokmat.append(np.hstack(row))
     
     # Concatenate all rows vertically
-    final_mat = np.vstack(block_mat)
+    final_mat = np.vstack(Blokmat)
     return final_mat
 
 P=initialize_permutations(n) #Initialize P
@@ -111,52 +109,60 @@ Adj= np.block([[L, D],          # First row of blocks: L and D
 
 #___________________________________________________________
 # (6) Defining the Swap function (The neibourhood Operator)
-def swap(block_mat, n):
+def swap(Blokmat, n):
     
     
-    block_size = n - 1
-    num_blocks = block_mat.shape[0] // block_size
+    Blocksize = n - 1
+    Numblox = Blokmat.shape[0] // Blocksize
     
     # Finding all the non diagonal blocks positions
-    non_zero_blocks = [(i, j) for i in range(num_blocks) for j in range(num_blocks) if i != j and i!=0 and j!=0]
+    NonZeroblox = [(i, j) for i in range(Numblox) for j in range(Numblox) if i != j and i!=0 and j!=0]
+    
     
     # select one non-zero block randomely
-    sel_block = random.choice(non_zero_blocks)
-    block_row, block_col = sel_block
+    SelctBlok = random.choice(NonZeroblox)
+    Blockrow, Blockol = SelctBlok
+
+
     
-    # Selected block matrix is assigned to a matrix named "sel_block_mat".
-    row_start = block_row * block_size
-    row_end = row_start + block_size
-    col_start = block_col * block_size
-    col_end = col_start + block_size
-    sel_block_mat = block_mat[row_start:row_end, col_start:col_end]
+    
+    # Selected block matrix is assigned to a matrix named "SelctBlokMat".
+    Rowstart = Blockrow * Blocksize
+    Rowend = Rowstart + Blocksize
+    Colmnstart = Blockol * Blocksize
+    Columnend = Colmnstart + Blocksize
+    SelctBlokMat = Blokmat[Rowstart:Rowend, Colmnstart:Columnend]
     
     # Randomly select two rows to swap
-    row_indices = random.sample(range(block_size), 2)
-    row1, row2 = row_indices
+    RowIndex = random.sample(range(Blocksize), 2)
+    row1, row2 = RowIndex
     
     # Swap the rows in the selected block
-    sel_block_mat[[row1, row2], :] = sel_block_mat[[row2, row1], :]
+    SelctBlokMat[[row1, row2], :] = SelctBlokMat[[row2, row1], :]
+
+
+
+
     
     # Update the original block matrix with the modified block
-    block_mat[row_start:row_end, col_start:col_end] = sel_block_mat
-    block_mat[ col_start:col_end, row_start:row_end] = sel_block_mat.T
+    Blokmat[Rowstart:Rowend, Colmnstart:Columnend] = SelctBlokMat
+    Blokmat[ Colmnstart:Columnend, Rowstart:Rowend] = SelctBlokMat.T
     
-    return block_mat
+    return Blokmat
 #_____________________________________________________________
 #_____________________________________________________________
 # (7) Simmulated Annealing Algorithm
 def simulated_annealing(Adj,iterations, temperature, alpha,P):
     
-    #current_Matrix = np.array(generate_symmetric_matrix(10, 3))
-    current_Matrix=Adj
-    current_value = objective(current_Matrix)
+    #CurrntMatriX = np.array(generate_symmetric_matrix(10, 3))
+    CurrntMatriX=Adj
+    CurrentFitness = objective(CurrntMatriX)
 
-    P_current=P
-    P_best=P
+    Ptest=P
+    Pbest=P
 
-    best_Matrix = current_Matrix
-    Bestfitness = current_value
+    Bestmatrix = CurrntMatriX
+    Bestfitness = CurrentFitness
 
     #temperature = initial_temp
     
@@ -169,9 +175,9 @@ def simulated_annealing(Adj,iterations, temperature, alpha,P):
         
     for iteration in range(iterations):
         # Generate a new candidate solution
-        P=swap(P_current,n)  #Apply the neighbourhood operation
+        P=swap(Ptest,n)  #Apply the neighbourhood operation
         #P=swap(P,n)
-        candidate_Matrix = np.block([
+        TestmatriX = np.block([
                                      [L, D],          # First row: A and B
                                      [D.T,P] # Second row: C and transpose of B
                                     ])
@@ -181,24 +187,25 @@ def simulated_annealing(Adj,iterations, temperature, alpha,P):
         
 
         
-        candidate_value = objective(candidate_Matrix)
+        candidateFitness = objective(TestmatriX)
        
        
         
         # Calculate acceptance probability
-        delta = candidate_value - current_value  
+        delta = candidateFitness - CurrentFitness  
         if delta < 0  or random.random() < math.exp(-delta / temperature):
             # Accept the new solution
-            current_Matrix = candidate_Matrix
-            current_value = candidate_value
-            P_current=P
+            CurrntMatriX = TestmatriX
+            CurrentFitness = candidateFitness
+            Ptest=P
 
         # Update the best solution found so far
-        if current_value < Bestfitness:
-            best_Matrix = current_Matrix
-            Bestfitness = current_value
-            P_best=P_current
+        if CurrentFitness < Bestfitness:
+            Bestmatrix = CurrntMatriX
+            Bestfitness = CurrentFitness
+            Pbest=Ptest
             
+
        
         
        
@@ -210,7 +217,7 @@ def simulated_annealing(Adj,iterations, temperature, alpha,P):
         
         #temperature =  temperature / (1 + alpha * np.log(1 + iteration))
 
-    return best_Matrix, Bestfitness,P_best
+    return Bestmatrix, Bestfitness,Pbest
 #_________________________________________________________________________________________________
 
 # (8) Define problem parameters [This parameters can be mannually changed]
@@ -227,31 +234,31 @@ print("implementation of the first simulated annealing algorithm propesed")
 print("_______________________________________________________________")
 # (9) Run the simulated Annealing Algorithm
 
-Adj2,Bestfitness,P_best = simulated_annealing(Adj,Iterations, Temperature, Alpha,P)
+Adj2,Bestfitness,Pbest = simulated_annealing(Adj,Iterations, Temperature, Alpha,P)
 
 G=nx.Graph(Adj2)
 diameter=nx.diameter(G) 
 print('diameter is ',diameter)
 #print (nx.diameter(G))
 print('above is the diameter')
-avg_distance = nx.average_shortest_path_length(G)
-print(f"Average distance between vertices: {avg_distance}")
+Avgdistance = nx.average_shortest_path_length(G)
+print(f"Average distance between vertices: {Avgdistance}")
 
-Adj_new=Adj2
+Adjnew=Adj2
 #____________________________________________________________________________________________________
 # (10) Start the second Run
 Iterations = 600
 Temperature = 1000
 Cooling_rate = 0.99
 for i in range (10):
-    Adj_new,Bestfitness,P_best = simulated_annealing(Adj_new,Iterations, Temperature, Cooling_rate,P_best)
-    G=nx.Graph(Adj_new)
+    Adjnew,Bestfitness,Pbest = simulated_annealing(Adjnew,Iterations, Temperature, Cooling_rate,Pbest)
+    G=nx.Graph(Adjnew)
     
     print('diameter in',i,'th reheat is',nx.diameter(G))
     #print (nx.diameter(G))
     print('above is the diameter')
-    avg_distance = nx.average_shortest_path_length(G)
-    print(f"Average distance between vertices: {avg_distance}")
+    Avgdistance = nx.average_shortest_path_length(G)
+    print(f"Average distance between vertices: {Avgdistance}")
     print('Number of excess pairs',Bestfitness)
 
 
@@ -264,7 +271,7 @@ M=n**2 * (n**2 + 1) / 2
 MDI=Bestfitness/M
 maximum_degree_of_the_graph = max(dict(G.degree()).values())
 print('Maximum degree of the graph is,',max(dict(G.degree()).values()))
-print('ASPL is',avg_distance)
+print('ASPL is',Avgdistance)
 print('MDI is',MDI)
 print('diameter of the graph is',nx.diameter(G))
 
